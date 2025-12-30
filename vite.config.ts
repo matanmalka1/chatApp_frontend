@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
     return {
       server: {
         port: 3000,
-        host: 'https://chatapp-backend-q9b6.onrender.com',
+        host: 'localhost',
       },
       plugins: [react()],
       define: {
