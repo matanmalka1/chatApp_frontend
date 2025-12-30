@@ -1,27 +1,42 @@
 
-export type Status = 'online' | 'offline' | 'away';
-
 export interface User {
   id: string;
-  name: string;
-  avatar: string;
-  status: Status;
+  _id: string;
+  username: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  avatar?: string;
+  isOnline: boolean;
   lastSeen?: string;
 }
 
 export interface Message {
   id: string;
-  senderId: string;
-  text: string;
-  timestamp: Date;
-  status: 'sent' | 'delivered' | 'read';
-  isAi?: boolean;
+  _id: string;
+  chatId: string;
+  sender: User;
+  content: string;
+  type: 'text' | 'image' | 'file';
+  createdAt: string;
+  updatedAt: string;
+  isRead?: boolean;
 }
 
-export interface Conversation {
+export interface Chat {
   id: string;
+  _id: string;
+  name?: string;
+  isGroup: boolean;
+  participants: User[];
+  lastMessage?: Message;
+  unreadCount?: number;
+  avatar?: string;
+  createdAt: string;
+}
+
+export interface AuthResponse {
   user: User;
-  lastMessage?: string;
-  lastMessageTime?: Date;
-  unreadCount: number;
+  accessToken: string;
+  refreshToken: string;
 }
