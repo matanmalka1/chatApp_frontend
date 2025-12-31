@@ -1,15 +1,20 @@
-
 import api from './axios';
 import { AuthResponse } from '../types';
 
-export const login = (credentials: any) => 
+export const login = (credentials: { email: string; password: string }) => 
   api.post<AuthResponse>('/api/auth/login', credentials);
 
-export const register = (userData: any) => 
+export const register = (userData: {
+  username: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}) => 
   api.post<AuthResponse>('/api/auth/register', userData);
 
-export const logout = () => 
-  api.post('/api/auth/logout');
+export const logout = (refreshToken?: string) => 
+  api.post('/api/auth/logout', { refreshToken });
 
-export const getMe = () => 
-  api.get('/api/users/me'); // Assuming endpoint exists for profile re-fetch
+export const refreshToken = (refreshToken: string) =>
+  api.post('/api/auth/refresh', { refreshToken });

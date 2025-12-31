@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { Chat, Message } from '../types';
 
@@ -8,7 +7,7 @@ interface ChatState {
   messages: Message[];
   isLoadingChats: boolean;
   isLoadingMessages: boolean;
-  typingUsers: Record<string, string[]>; // chatId -> userIds
+  typingUsers: Record<string, string[]>;
   setChats: (chats: Chat[]) => void;
   setActiveChat: (chat: Chat | null) => void;
   setMessages: (messages: Message[]) => void;
@@ -32,24 +31,30 @@ export const useChatStore = create<ChatState>((set) => ({
   setActiveChat: (chat) => set({ activeChat: chat, messages: [] }),
   setMessages: (messages) => set({ messages }),
   
-  addMessage: (message) => set((state) => ({
-    messages: [...state.messages, message],
-    // Update last message in chat list
-    chats: state.chats.map(c => 
-      c._id === message.chatId ? { ...c, lastMessage: message } : c
-    ).sort((a, b) => {
-      const aTime = new Date(a.lastMessage?.createdAt || a.createdAt).getTime();
-      const bTime = new Date(b.lastMessage?.createdAt || b.createdAt).getTime();
-      return bTime - aTime;
-    })
-  })),
+  addMessage: (message) => set((state) => {
+    // מציאת ההודעה האחרונה מתוך ה-messages של הצ'אט
+    const lastMessage = state.chats.find(c => c.id === message.chatId)?.messages?.[0] || message;
+    
+    return {
+      messages: [...state.messages, message],
+      chats: state.chats.map(c => 
+        c.id === message.chatId 
+          ? { ...c, messages: [message, ...(c.messages || [])] } 
+          : c
+      ).sort((a, b) => {
+        const aTime = new Date(a.messages?.[0]?.createdAt || a.createdAt).getTime();
+        const bTime = new Date(b.messages?.[0]?.createdAt || b.createdAt).getTime();
+        return bTime - aTime;
+      })
+    };
+  }),
 
   updateMessageInList: (message) => set((state) => ({
-    messages: state.messages.map(m => m._id === message._id ? message : m)
+    messages: state.messages.map(m => m.id === message.id ? message : m)
   })),
 
   removeMessage: (messageId) => set((state) => ({
-    messages: state.messages.filter(m => m._id !== messageId)
+    messages: state.messages.filter(m => m.id !== messageId)
   })),
 
   setLoadingChats: (loading) => set({ isLoadingChats: loading }),

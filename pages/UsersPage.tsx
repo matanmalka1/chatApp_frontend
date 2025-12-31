@@ -1,12 +1,11 @@
-
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/common/Layout';
 import { getUsers } from '../api/users';
-import { createChat, getChats } from '../api/chats';
+import { createChat } from '../api/chats';
 import { User } from '../types';
 import Avatar from '../components/common/Avatar';
 import { useChatStore } from '../store/chatStore';
-// @ts-ignore: react-router-dom exports are incorrectly reported as missing in this environment
+// @ts-ignore
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -39,8 +38,8 @@ const UsersPage: React.FC = () => {
   };
 
   const handleStartChat = async (targetUser: User) => {
-    // Check if chat already exists in store
-    const existing = chats.find(c => !c.isGroup && c.participants.some(p => p._id === targetUser._id));
+    // שימוש ב-users במקום participants
+    const existing = chats.find(c => !c.isGroup && c.users.some(p => p.id === targetUser.id));
     if (existing) {
       setActiveChat(existing);
       navigate('/');
@@ -48,12 +47,15 @@ const UsersPage: React.FC = () => {
     }
 
     try {
-      const { data } = await createChat({ participants: [targetUser._id] });
-      setChats([data, ...chats]);
-      setActiveChat(data);
+      // שימוש ב-userIds במקום participants
+      const { data } = await createChat({ userIds: [targetUser.id], isGroup: false });
+      setChats([data.chat, ...chats]);
+      setActiveChat(data.chat);
       navigate('/');
-    } catch (err) {
-      toast.error('Failed to start chat');
+      toast.success('Chat started!');
+    } catch (err: any) {
+      console.error('Failed to start chat:', err);
+      toast.error(err.response?.data?.error || 'Failed to start chat');
     }
   };
 
@@ -109,7 +111,7 @@ const UsersPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {users.map(u => (
                     <div 
-                      key={u._id} 
+                      key={u.id} 
                       className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-indigo-200 hover:shadow-md transition-all group"
                     >
                       <div className="flex items-center space-x-4 mb-4">

@@ -1,7 +1,5 @@
-
 export interface User {
   id: string;
-  _id: string;
   username: string;
   email: string;
   firstName?: string;
@@ -9,33 +7,36 @@ export interface User {
   avatar?: string;
   isOnline: boolean;
   lastSeen?: string;
+  socketId?: string;
 }
 
 export interface Message {
   id: string;
-  _id: string;
   chatId: string;
+  userId: string;
   sender: User;
   content: string;
   type: 'text' | 'image' | 'file';
   createdAt: string;
   updatedAt: string;
   isRead?: boolean;
+  readBy?: string[];
 }
 
 export interface Chat {
   id: string;
-  _id: string;
   name?: string;
   isGroup: boolean;
-  participants: User[];
-  lastMessage?: Message;
-  unreadCount?: number;
+  users: User[]; // שם השדה הנכון מה-Backend
+  messages?: Message[];
   avatar?: string;
+  createdBy?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthResponse {
+  message: string;
   user: User;
   accessToken: string;
   refreshToken: string;

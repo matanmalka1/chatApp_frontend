@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Message } from '../../types';
 import { useAuthStore } from '../../store/authStore';
@@ -15,14 +14,14 @@ interface MessageItemProps {
 const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
   const { user } = useAuthStore();
   const { removeMessage, updateMessageInList } = useChatStore();
-  const isMe = message.sender._id === user?._id;
+  const isMe = message.sender.id === user?.id;
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
 
   const handleDelete = async () => {
     try {
-      await deleteMessage(message._id);
-      removeMessage(message._id);
+      await deleteMessage(message.id);
+      removeMessage(message.id);
       toast.success('Message deleted');
     } catch (err) {
       toast.error('Failed to delete message');
@@ -35,8 +34,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
       return;
     }
     try {
-      const { data } = await updateMessage(message._id, editContent);
-      updateMessageInList(data);
+      const { data } = await updateMessage(message.id, editContent);
+      updateMessageInList(data.data);
       setIsEditing(false);
       toast.success('Message updated');
     } catch (err) {

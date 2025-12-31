@@ -1,5 +1,4 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useChatStore } from '../../store/chatStore';
 import SocketManager from '../../utils/socket';
 import { useAuthStore } from '../../store/authStore';
@@ -9,10 +8,9 @@ import toast from 'react-hot-toast';
 const MessageInput: React.FC = () => {
   const [text, setText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  // Fixed: Changed from NodeJS.Timeout to any to avoid namespace errors in browser environment
   const typingTimeoutRef = useRef<any>(null);
   const { activeChat, addMessage } = useChatStore();
-  const { accessToken, user } = useAuthStore();
+  const { accessToken } = useAuthStore();
   
   const socket = SocketManager.getInstance(accessToken);
 
@@ -21,14 +19,14 @@ const MessageInput: React.FC = () => {
 
     if (!isTyping) {
       setIsTyping(true);
-      socket.emit('typing_start', { chatId: activeChat._id });
+      socket.emit('typing_start', { chatId: activeChat.id });
     }
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
-      socket.emit('typing_stop', { chatId: activeChat._id });
+      socket.emit('typing_stop', { chatId: activeChat.id });
     }, 3000);
   };
 
@@ -42,25 +40,23 @@ const MessageInput: React.FC = () => {
     // Clear typing
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
-      socket.emit('typing_stop', { chatId: activeChat._id });
+      if (socket) socket.emit('typing_stop', { chatId: activeChat.id });
       setIsTyping(false);
     }
 
     try {
-      // Optimistic update could happen here
       const { data } = await apiSendMessage({
-        chatId: activeChat._id,
+        chatId: activeChat.id,
         content,
         type: 'text'
       });
       
-      // The socket might also send this message back, 
-      // check logic to prevent double addition
-      // Usually socket broadcasts to everyone EXCEPT sender, or we just rely on API response
-      addMessage(data);
-    } catch (err) {
-      toast.error('Message failed to send');
-      setText(content); // Restore text
+      // הוספת ההודעה לרשימה
+      addMessage(data.data);
+    } catch (err: any) {
+      console.error('Failed to send message:', err);
+      toast.error(err.response?.data?.error || 'Message failed to send');
+      setText(content);
     }
   };
 

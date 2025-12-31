@@ -1,10 +1,8 @@
-
 import React from 'react';
 import { useChatStore } from '../../store/chatStore';
 import { useAuthStore } from '../../store/authStore';
 import Avatar from '../common/Avatar';
 import { formatChatTime } from '../../utils/formatDate';
-import { Chat } from '../../types';
 
 const ChatList: React.FC = () => {
   const { chats, activeChat, setActiveChat, isLoadingChats } = useChatStore();
@@ -37,13 +35,15 @@ const ChatList: React.FC = () => {
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar">
       {chats.map((chat) => {
-        const otherParticipant = chat.participants.find(p => p._id !== user?._id);
+        // שימוש ב-users במקום participants
+        const otherParticipant = chat.users.find(p => p.id !== user?.id);
         const name = chat.isGroup ? (chat.name || 'Group Chat') : (otherParticipant?.username || 'Unknown User');
-        const isActive = activeChat?._id === chat._id;
+        const isActive = activeChat?.id === chat.id;
+        const lastMessage = chat.messages?.[0];
 
         return (
           <div
-            key={chat._id}
+            key={chat.id}
             onClick={() => setActiveChat(chat)}
             className={`flex items-center p-3 cursor-pointer transition-colors duration-200 hover:bg-gray-100 ${
               isActive ? 'bg-indigo-50 border-r-4 border-indigo-500' : ''
@@ -60,21 +60,16 @@ const ChatList: React.FC = () => {
                 <h3 className={`text-sm font-semibold truncate ${isActive ? 'text-indigo-900' : 'text-gray-900'}`}>
                   {name}
                 </h3>
-                {chat.lastMessage && (
+                {lastMessage && (
                   <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">
-                    {formatChatTime(chat.lastMessage.createdAt)}
+                    {formatChatTime(lastMessage.createdAt)}
                   </span>
                 )}
               </div>
               <p className="text-xs text-gray-500 truncate mt-0.5">
-                {chat.lastMessage ? chat.lastMessage.content : 'No messages yet'}
+                {lastMessage ? lastMessage.content : 'No messages yet'}
               </p>
             </div>
-            {chat.unreadCount && chat.unreadCount > 0 ? (
-              <span className="ml-2 bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                {chat.unreadCount}
-              </span>
-            ) : null}
           </div>
         );
       })}

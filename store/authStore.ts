@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { User } from '../types';
 import { STORAGE_KEYS } from '../constants';
@@ -23,13 +22,19 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setAuth: (user, accessToken, refreshToken) => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+    // שמירת User ב-localStorage כדי שנוכל לטעון אותו מחדש
+    localStorage.setItem('chat_app_user', JSON.stringify(user));
     set({ user, accessToken, isAuthenticated: true, isLoading: false });
   },
 
   updateUser: (updatedUser) => {
-    set((state) => ({
-      user: state.user ? { ...state.user, ...updatedUser } : null,
-    }));
+    set((state) => {
+      const newUser = state.user ? { ...state.user, ...updatedUser } : null;
+      if (newUser) {
+        localStorage.setItem('chat_app_user', JSON.stringify(newUser));
+      }
+      return { user: newUser };
+    });
   },
 
   setAccessToken: (token) => {
@@ -38,6 +43,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: () => {
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem('chat_app_user');
     set({ user: null, accessToken: null, isAuthenticated: false, isLoading: false });
   },
 

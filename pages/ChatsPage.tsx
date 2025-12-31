@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/common/Layout';
 import ChatList from '../components/chat/ChatList';
@@ -37,15 +36,17 @@ const ChatsPage: React.FC = () => {
       try {
         const { data } = await getUsers({ search: q, limit: 5 });
         setFoundUsers(data.users);
-      } catch (err) {}
+      } catch (err) {
+        console.error('Failed to search users:', err);
+      }
     } else {
       setFoundUsers([]);
     }
   };
 
   const handleStartChat = async (targetUser: User) => {
-    // Check if chat already exists
-    const existing = chats.find(c => !c.isGroup && c.participants.some(p => p._id === targetUser._id));
+    // שימוש ב-users במקום participants
+    const existing = chats.find(c => !c.isGroup && c.users.some(p => p.id === targetUser.id));
     if (existing) {
       setActiveChat(existing);
       setShowNewChatModal(false);
@@ -53,12 +54,15 @@ const ChatsPage: React.FC = () => {
     }
 
     try {
-      const { data } = await createChat({ participants: [targetUser._id] });
-      setChats([data, ...chats]);
-      setActiveChat(data);
+      // שימוש ב-userIds במקום participants
+      const { data } = await createChat({ userIds: [targetUser.id], isGroup: false });
+      setChats([data.chat, ...chats]);
+      setActiveChat(data.chat);
       setShowNewChatModal(false);
-    } catch (err) {
-      toast.error('Failed to start chat');
+      toast.success('Chat started!');
+    } catch (err: any) {
+      console.error('Failed to start chat:', err);
+      toast.error(err.response?.data?.error || 'Failed to start chat');
     }
   };
 
@@ -114,7 +118,7 @@ const ChatsPage: React.FC = () => {
               <div className="mt-4 space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
                 {foundUsers.map(u => (
                   <div 
-                    key={u._id} 
+                    key={u.id} 
                     onClick={() => handleStartChat(u)}
                     className="flex items-center p-3 rounded-xl hover:bg-indigo-50 cursor-pointer transition-colors"
                   >

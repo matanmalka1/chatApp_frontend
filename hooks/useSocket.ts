@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
@@ -15,36 +14,54 @@ export const useSocket = () => {
 
     const socket = SocketManager.getInstance(accessToken);
 
-    socket.on('connect', () => console.log('Socket connected'));
+    socket.on('connect', () => {
+      console.log('✅ Socket connected');
+    });
     
     socket.on('new_message', (message) => {
-      // If the message belongs to active chat, add it
-      if (activeChat && message.chatId === activeChat._id) {
+      console.log('📨 New message received:', message);
+      
+      // אם ההודעה שייכת לצ'אט הפעיל, נוסיף אותה
+      if (activeChat && message.chatId === activeChat.id) {
         addMessage(message);
       } else {
-        // Increment unread count for other chats
+        // אחרת, נעדכן את הצ'אטים
         setChats(chats.map(c => 
-          c._id === message.chatId 
-            ? { ...c, unreadCount: (c.unreadCount || 0) + 1, lastMessage: message } 
+          c.id === message.chatId 
+            ? { ...c, messages: [message, ...(c.messages || [])] } 
             : c
         ));
       }
     });
 
-    socket.on('user_typing', ({ chatId, userId }) => {
-      setTyping(chatId, userId, true);
+    socket.on('user_typing', ({ chatId, user: typingUser }) => {
+      console.log('⌨️ User typing:', typingUser?.username);
+      if (typingUser && typingUser.id) {
+        setTyping(chatId, typingUser.id, true);
+      }
     });
 
     socket.on('user_stopped_typing', ({ chatId, userId }) => {
+      console.log('⏹️ User stopped typing');
       setTyping(chatId, userId, false);
     });
 
-    socket.on('user_online', (userId) => {
+    socket.on('user_online', ({ userId }) => {
+      console.log('🟢 User online:', userId);
       updateUserStatus(userId, true);
     });
 
-    socket.on('user_offline', (userId) => {
+    socket.on('user_offline', ({ userId }) => {
+      console.log('🔴 User offline:', userId);
       updateUserStatus(userId, false);
+    });
+
+    socket.on('error', (error) => {
+      console.error('❌ Socket error:', error);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('🔌 Socket disconnected');
     });
 
     return () => {
@@ -54,16 +71,20 @@ export const useSocket = () => {
       socket.off('user_stopped_typing');
       socket.off('user_online');
       socket.off('user_offline');
+      socket.off('error');
+      socket.off('disconnect');
     };
   }, [accessToken, activeChat, addMessage, setTyping, chats, setChats, updateUserStatus]);
 
   useEffect(() => {
     if (activeChat && accessToken) {
       const socket = SocketManager.getInstance(accessToken);
-      socket.emit('join_chat', { chatId: activeChat._id });
+      console.log('🚪 Joining chat:', activeChat.id);
+      socket.emit('join_chat', { chatId: activeChat.id });
 
       return () => {
-        socket.emit('leave_chat', { chatId: activeChat._id });
+        console.log('🚪 Leaving chat:', activeChat.id);
+        socket.emit('leave_chat', { chatId: activeChat.id });
       };
     }
   }, [activeChat, accessToken]);

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useChatStore } from '../../store/chatStore';
 import { useAuthStore } from '../../store/authStore';
@@ -26,13 +25,13 @@ const ChatRoom: React.FC = () => {
     const fetchMessages = async () => {
       setLoadingMessages(true);
       try {
-        const { data } = await getMessages(activeChat._id, 1, 50);
+        const { data } = await getMessages(activeChat.id, 1, 50);
         setMessages(data.messages);
         setHasMore(data.messages.length < data.total);
         setPage(1);
         setTimeout(() => scrollToBottom('auto'), 100);
       } catch (err) {
-        console.error('Failed to fetch messages');
+        console.error('Failed to fetch messages:', err);
       } finally {
         setLoadingMessages(false);
       }
@@ -47,12 +46,8 @@ const ChatRoom: React.FC = () => {
     setLoadingMore(true);
     const nextPage = page + 1;
     try {
-      const { data } = await getMessages(activeChat._id, nextPage, 50);
-      setMessages([...data.messages, ...messages]); // Newest are at the end in some APIs, check logic
-      // Usually, prepending old messages:
-      // However, our `messages` state might be ordered chronologically (newest last)
-      // If `data.messages` are older messages, they should be at the BEGINNING.
-      setMessages([...data.messages, ...messages]); 
+      const { data } = await getMessages(activeChat.id, nextPage, 50);
+      setMessages([...data.messages, ...messages]);
       setHasMore(messages.length + data.messages.length < data.total);
       setPage(nextPage);
     } catch (err) {
@@ -63,8 +58,6 @@ const ChatRoom: React.FC = () => {
   };
 
   useEffect(() => {
-    // Only scroll to bottom automatically if it's the first load or a new message arrived
-    // (We might want to detect if user is already scrolled up)
     if (messages.length > 0 && page === 1) {
       scrollToBottom();
     }
@@ -86,9 +79,9 @@ const ChatRoom: React.FC = () => {
     );
   }
 
-  const otherParticipant = activeChat.participants.find(p => p._id !== user?._id);
+  const otherParticipant = activeChat.users.find(p => p.id !== user?.id);
   const chatName = activeChat.isGroup ? (activeChat.name || 'Group Chat') : (otherParticipant?.username || 'Chat');
-  const typing = typingUsers[activeChat._id] || [];
+  const typing = typingUsers[activeChat.id] || [];
 
   return (
     <div className="flex flex-col flex-1 h-full bg-white md:bg-gray-50 relative overflow-hidden">
@@ -152,7 +145,7 @@ const ChatRoom: React.FC = () => {
             
             <div className="flex-1 flex flex-col">
               {messages.map((msg) => (
-                <MessageItem key={msg._id} message={msg} />
+                <MessageItem key={msg.id} message={msg} />
               ))}
             </div>
 
